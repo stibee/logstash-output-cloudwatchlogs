@@ -84,7 +84,7 @@ describe "outputs/cloudwatchlogs" do
       before :each do
         @event = LogStash::Event.new
         @event.timestamp = LogStash::Timestamp.coerce("2015-02-13T01:19:08Z")
-        @event["message"] = "test"
+        @event.set("message", "test")
         expect(@output.buffer).not_to receive(:enq)
       end
       context "when event doesn't have @timestamp" do
@@ -107,7 +107,7 @@ describe "outputs/cloudwatchlogs" do
           expect(@output.buffer).to receive(:enq) { {:timestamp => 1423786748000.0, :message => "test"} }
           event = LogStash::Event.new
           event.timestamp = LogStash::Timestamp.coerce("2015-02-13T01:19:08Z")
-          event["message"] = "test"
+          event.set("message", "test")
           expect { @output.receive(event) }.to_not raise_error
         end
       end

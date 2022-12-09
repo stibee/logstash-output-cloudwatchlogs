@@ -145,7 +145,7 @@ class LogStash::Outputs::CloudWatchLogs < LogStash::Outputs::Base
       @codec.encode(event)
     else
       @buffer.enq({:timestamp => event.timestamp.time.to_f*1000,
-       :message => event[MESSAGE] })
+                   :message => event.get(MESSAGE) })
     end
   end # def receive
 
@@ -190,7 +190,7 @@ class LogStash::Outputs::CloudWatchLogs < LogStash::Outputs::Base
       )
       @sequence_token = response.next_sequence_token
     rescue Aws::CloudWatchLogs::Errors::InvalidSequenceTokenException => e
-      @logger.warn(e)
+      @logger.warn(e.to_s)
       if /sequenceToken(?:\sis)?: ([^\s]+)/ =~ e.to_s
         if $1 == 'null'
           @sequence_token = nil
@@ -203,7 +203,7 @@ class LogStash::Outputs::CloudWatchLogs < LogStash::Outputs::Base
         @logger.error("Cannot find sequence token from response")
       end
     rescue Aws::CloudWatchLogs::Errors::DataAlreadyAcceptedException => e
-      @logger.warn(e)
+      @logger.warn(e.to_s)
       if /sequenceToken(?:\sis)?: ([^\s]+)/ =~ e.to_s
         if $1 == 'null'
           @sequence_token = nil
@@ -221,14 +221,14 @@ class LogStash::Outputs::CloudWatchLogs < LogStash::Outputs::Base
       rescue Aws::CloudWatchLogs::Errors::ResourceAlreadyExistsException => e
         @logger.info("Log group #{@log_group_name} already exists")
       rescue Exception => e
-        @logger.error(e)
+        @logger.error(e.to_s)
       end
       begin
         @cwl.create_log_stream(:log_group_name => @log_group_name, :log_stream_name => @log_stream_name)
       rescue Aws::CloudWatchLogs::Errors::ResourceAlreadyExistsException => e
         @logger.info("Log stream #{@log_stream_name} already exists")
       rescue Exception => e
-        @logger.error(e)
+        @logger.error(e.to_s)
       end
       retry
     rescue Aws::CloudWatchLogs::Errors::InvalidParameterException => e
@@ -246,7 +246,7 @@ class LogStash::Outputs::CloudWatchLogs < LogStash::Outputs::Base
 
   private
   def invalid?(event)
-    status = event[TIMESTAMP].nil? || (!@use_codec && event[MESSAGE].nil?)
+    status = event.get(TIMESTAMP).nil? || (!@use_codec && event.get(MESSAGE).nil?)
     if status
       @logger.warn("Skipping invalid event #{event.to_hash}")
     end
